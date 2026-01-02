@@ -4,6 +4,8 @@ use anchor_lang::prelude::*;
 #[account]
 #[derive(InitSpace)]
 pub struct GiftCard {
+    /// Unique card identifier (allows multiple cards per owner)
+    pub card_id: u64,
     /// The original creator/owner of the gift card
     pub owner: Pubkey,
     /// Current balance in token units
@@ -29,4 +31,3 @@ impl GiftCard {
     /// Seed prefix for deriving gift card PDA
     pub const SEED_PREFIX: &'static [u8] = b"gift_card";
 }
-

@@ -22,5 +22,8 @@ pub enum GiftCardError {
     RefundNotAvailable,
     #[msg("No balance to refund")]
     NoBalanceToRefund,
+    #[msg("Invalid card ID")]
+    InvalidCardId,
+    #[msg("Gift card still has balance")]
+    HasBalance,
 }
-

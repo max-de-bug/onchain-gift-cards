@@ -6,11 +6,13 @@ use crate::events::GiftCardRedeemed;
 use crate::state::GiftCard;
 
 #[derive(Accounts)]
+#[instruction(card_id: u64)]
 pub struct Redeem<'info> {
     #[account(
         mut,
-        seeds = [GiftCard::SEED_PREFIX, gift_card.owner.as_ref()],
+        seeds = [GiftCard::SEED_PREFIX, gift_card.owner.as_ref(), &card_id.to_le_bytes()],
         bump = gift_card.bump,
+        constraint = gift_card.card_id == card_id @ GiftCardError::InvalidCardId,
     )]
     pub gift_card: Account<'info, GiftCard>,
 
@@ -34,7 +36,7 @@ pub struct Redeem<'info> {
 }
 
 /// Redeems tokens from a gift card to a merchant
-pub fn handler(ctx: Context<Redeem>, amount: u64) -> Result<()> {
+pub fn handler_redeem(ctx: Context<Redeem>, card_id: u64, amount: u64) -> Result<()> {
     let gift_card = &ctx.accounts.gift_card;
     let clock = Clock::get()?;
 
@@ -71,9 +73,11 @@ pub fn handler(ctx: Context<Redeem>, amount: u64) -> Result<()> {
     let new_balance = gift_card.balance - amount;
 
     // Create signer seeds for PDA (gift_card is authority over escrow)
+    let card_id_bytes = card_id.to_le_bytes();
     let seeds = &[
         GiftCard::SEED_PREFIX,
         owner_key.as_ref(),
+        card_id_bytes.as_ref(),
         &[bump],
     ];
     let signer_seeds = &[&seeds[..]];
@@ -96,6 +100,7 @@ pub fn handler(ctx: Context<Redeem>, amount: u64) -> Result<()> {
     ctx.accounts.gift_card.balance = new_balance;
 
     emit!(GiftCardRedeemed {
+        card_id,
         gift_card: gift_card_key,
         merchant: ctx.accounts.merchant.key(),
         amount,
@@ -104,4 +109,3 @@ pub fn handler(ctx: Context<Redeem>, amount: u64) -> Result<()> {
 
     Ok(())
 }
-

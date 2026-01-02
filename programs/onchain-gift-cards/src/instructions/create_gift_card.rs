@@ -9,12 +9,13 @@ use crate::events::GiftCardCreated;
 use crate::state::GiftCard;
 
 #[derive(Accounts)]
+#[instruction(card_id: u64)]
 pub struct CreateGiftCard<'info> {
     #[account(
         init,
         payer = gift_giver,
         space = 8 + GiftCard::INIT_SPACE,
-        seeds = [GiftCard::SEED_PREFIX, gift_giver.key().as_ref()],
+        seeds = [GiftCard::SEED_PREFIX, gift_giver.key().as_ref(), &card_id.to_le_bytes()],
         bump
     )]
     pub gift_card: Account<'info, GiftCard>,
@@ -42,8 +43,9 @@ pub struct CreateGiftCard<'info> {
 }
 
 /// Creates a new gift card with specified amount and dates
-pub fn handler(
+pub fn handler_create_gift_card(
     ctx: Context<CreateGiftCard>,
+    card_id: u64,
     amount: u64,
     unlock_date: i64,
     refund_date: i64,
@@ -65,6 +67,7 @@ pub fn handler(
     let decimals = ctx.accounts.token_mint.decimals;
 
     // Initialize gift card state
+    gift_card.card_id = card_id;
     gift_card.owner = ctx.accounts.gift_giver.key();
     gift_card.balance = amount;
     gift_card.unlock_date = unlock_date;
@@ -86,6 +89,7 @@ pub fn handler(
     token_interface::transfer_checked(cpi_ctx, amount, decimals)?;
 
     emit!(GiftCardCreated {
+        card_id,
         owner: gift_card.owner,
         balance: gift_card.balance,
         unlock_date: gift_card.unlock_date,
@@ -94,4 +98,3 @@ pub fn handler(
 
     Ok(())
 }
-

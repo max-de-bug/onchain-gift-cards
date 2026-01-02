@@ -7,11 +7,14 @@ skip-lint = false
 [programs.localnet]
 onchain_gift_cards = "GcoSaa4P2NADPsf6R5urbrUEv9SccPTP5Xjd6GznV8p"
 
+[programs.devnet]
+onchain_gift_cards = "GcoSaa4P2NADPsf6R5urbrUEv9SccPTP5Xjd6GznV8p"
+
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

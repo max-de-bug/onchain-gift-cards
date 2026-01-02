@@ -19,25 +19,31 @@ pub mod onchain_gift_cards {
     /// Creates a new gift card with specified amount and dates
     pub fn create_gift_card(
         ctx: Context<CreateGiftCard>,
+        card_id: u64,
         amount: u64,
         unlock_date: i64,
         refund_date: i64,
     ) -> Result<()> {
-        instructions::create_gift_card::handler(ctx, amount, unlock_date, refund_date)
+        instructions::create_gift_card::handler_create_gift_card(ctx, card_id, amount, unlock_date, refund_date)
     }
 
     /// Sets the allowed merchants for a gift card
-    pub fn rule_set(ctx: Context<RuleSet>, allowed_merchants: Vec<Pubkey>) -> Result<()> {
-        instructions::rule_set::handler(ctx, allowed_merchants)
+    pub fn rule_set(ctx: Context<RuleSet>, card_id: u64, allowed_merchants: Vec<Pubkey>) -> Result<()> {
+        instructions::rule_set::handler_rule_set(ctx, card_id, allowed_merchants)
     }
 
     /// Redeems tokens from a gift card to a merchant
-    pub fn redeem(ctx: Context<Redeem>, amount: u64) -> Result<()> {
-        instructions::redeem::handler(ctx, amount)
+    pub fn redeem(ctx: Context<Redeem>, card_id: u64, amount: u64) -> Result<()> {
+        instructions::redeem::handler_redeem(ctx, card_id, amount)
     }
 
     /// Refunds remaining balance to the original gift giver after refund date
-    pub fn refund(ctx: Context<Refund>) -> Result<()> {
-        instructions::refund::handler(ctx)
+    pub fn refund(ctx: Context<Refund>, card_id: u64) -> Result<()> {
+        instructions::refund::handler_refund(ctx, card_id)
+    }
+
+    /// Deletes an empty gift card account and reclaims rent
+    pub fn delete_gift_card(ctx: Context<DeleteGiftCard>, card_id: u64) -> Result<()> {
+        instructions::delete_gift_card::handler_delete_gift_card(ctx, card_id)
     }
 }

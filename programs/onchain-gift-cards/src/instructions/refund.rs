@@ -6,11 +6,13 @@ use crate::events::BalanceRefunded;
 use crate::state::GiftCard;
 
 #[derive(Accounts)]
+#[instruction(card_id: u64)]
 pub struct Refund<'info> {
     #[account(
         mut,
-        seeds = [GiftCard::SEED_PREFIX, owner.key().as_ref()],
+        seeds = [GiftCard::SEED_PREFIX, owner.key().as_ref(), &card_id.to_le_bytes()],
         bump = gift_card.bump,
+        constraint = gift_card.card_id == card_id @ GiftCardError::InvalidCardId,
     )]
     pub gift_card: Account<'info, GiftCard>,
 
@@ -31,7 +33,7 @@ pub struct Refund<'info> {
 }
 
 /// Refunds remaining balance to the original gift giver after refund date
-pub fn handler(ctx: Context<Refund>) -> Result<()> {
+pub fn handler_refund(ctx: Context<Refund>, card_id: u64) -> Result<()> {
     let gift_card = &ctx.accounts.gift_card;
     let clock = Clock::get()?;
 
@@ -58,9 +60,11 @@ pub fn handler(ctx: Context<Refund>) -> Result<()> {
     let gift_card_key = ctx.accounts.gift_card.key();
 
     // Create signer seeds for PDA (gift_card is authority over escrow)
+    let card_id_bytes = card_id.to_le_bytes();
     let seeds = &[
         GiftCard::SEED_PREFIX,
         owner_key.as_ref(),
+        card_id_bytes.as_ref(),
         &[bump],
     ];
     let signer_seeds = &[&seeds[..]];
@@ -83,6 +87,7 @@ pub fn handler(ctx: Context<Refund>) -> Result<()> {
     ctx.accounts.gift_card.balance = 0;
 
     emit!(BalanceRefunded {
+        card_id,
         gift_card: gift_card_key,
         amount: refund_amount,
         remaining_balance: 0,
@@ -90,4 +95,3 @@ pub fn handler(ctx: Context<Refund>) -> Result<()> {
 
     Ok(())
 }
-
